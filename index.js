@@ -52,8 +52,34 @@ Stream.all = function(arr) {
 Stream.race = function() {
 
 }
-Stream.resolve = function() {
-
+Stream.from = function(value) {
+  if (value instanceof Promise) {
+    return Stream(function(next, error) {
+      value.then(next)
+    })
+  } else if (typeof(value) === 'function') {
+    const stream = Stream((next, error) => {
+      // generator
+      const val = value()
+      if (val.next) {
+        const generator = val
+        console.log(generator)
+        let cur = generator.next()
+        while(!cur.done) {
+          next(cur.value)
+          cur = generator.next()
+        }
+        next(cur.value)
+      } else {
+        next(value)
+      }
+    })
+    return stream;
+  } else {
+    return Stream(function(next, error) {
+      next(value)
+    })
+  }
 }
 
 const eventStream = Stream((next, error) => {
@@ -67,7 +93,8 @@ const eventStream2 = Stream((next, error) => {
 
 eventStream.concat(eventStream2).map(val => console.log(val))
 // Stream.all([eventStream, eventStream2]).map(val => console.log(val))
-
+const promise = fetch('./index.html').then(res => res.text())
+// Stream.from(promise).map(val => console.log(val))
 
 // Event
 // value
@@ -75,3 +102,16 @@ eventStream.concat(eventStream2).map(val => console.log(val))
 // Generator
 
 // Stream method: from loadsh (streamify)
+
+// Stream.from(function* fibonacci () {
+//   var fn1 = 1;
+//   var fn2 = 1;
+//   while (1){
+//     var current = fn2;
+//     fn2 = fn1;
+//     fn1 = fn1 + current;
+//     yield current;
+//   }
+// }).map(val => console.log(val))
+
+Stream.from([1,2,3]).map(value => console.log(value))

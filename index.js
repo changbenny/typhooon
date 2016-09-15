@@ -100,7 +100,22 @@ Stream.race = function() {
 
 }
 Stream.from = function(value) {
-  if (value instanceof Promise) {
+  if (value instanceof HTMLElement) {
+    return Stream(function(next, error) {
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          next(mutation)
+        })    
+      })
+      observer.observe(value, {
+        childList: true,
+        attributes: true,
+        characterData: true,
+        subtree: true,
+      })
+    })
+    
+  } else if (value instanceof Promise) {
     return Stream(function(next, error) {
       value.then(next)
     })
@@ -175,3 +190,4 @@ eventStream
 // }).map(val => console.log(val))
 
 // Stream.from([1,2,3]).map(value => console.log(value))
+Stream.from(document.getElementById('div')).map(value => console.log(value))

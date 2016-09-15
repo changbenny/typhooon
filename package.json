@@ -1,0 +1,14 @@
+{
+  "name": "typhooon",
+  "version": "0.0.1",
+  "description": "Functional reactive library for forgetful developers.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "reactive"
+  ],
+  "author": "",
+  "license": "MIT"
+}

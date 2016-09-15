@@ -141,11 +141,10 @@ Stream.from = function(value) {
       }
     })
     return stream;
-  } else {
-    return Stream(function(next, error) {
-      next(value)
-    })
   }
+  return Stream(function(next, error) {
+    next(value)
+  })
 }
 
 const eventStream = Stream((next, error) => {
@@ -175,6 +174,7 @@ eventStream
 // value (push/pull stream)
 // Future (push stream)
 // Generator (pull stream)
+// DOM (push stream)
 
 // Stream method: from loadsh (streamify)
 

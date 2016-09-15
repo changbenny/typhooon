@@ -4,6 +4,8 @@ const Stream = function(initialize) {
   }
   this.subscribers = []
   this.catchers = []
+  // For 'hot' observable
+  this.queue = []
   this.remover = initialize.call(
     this,
     this._next.bind(this),
@@ -12,23 +14,54 @@ const Stream = function(initialize) {
 }
 
 Stream.prototype._next = function(...args) {
+  this.queue.push(args)
   this.subscribers.forEach(sub => sub(...args))
 }
 Stream.prototype._error = function(...args) {
   this.catchers.push(catcher)
 }
-Stream.prototype.map = function(subscriber) {
-  this.subscribers.push(subscriber)
+Stream.prototype.map = function(mapper) {
+  const { subscribers, queue } = this
+  return Stream(function(next, error) {
+    subscribers.push(function(...args) {
+      next(mapper(...args))
+    })
+    queue.forEach(args => next(mapper(...args)))
+  })
+  return this
 }
+Stream.prototype.filter = function(predictor) {
+  const { subscribers, queue } = this
+  return Stream(function(next, error) {
+    subscribers.push(function(...args) {
+      if (predictor(...args)) {
+        next(...args)
+      }
+    })
+    queue
+      .filter(args => predictor(...args))
+      .forEach(args => next(...args))
+  })
+}
+// TODO: align with Array concat
 Stream.prototype.concat = function(stream) {
   const original = this
-  return new Stream(function(_next, _error) {
-    original.subscribers.push(_next)
-    stream.map(_next)
+  return Stream(function(next, error) {
+    original.subscribers.push(next)
+    stream.map(next)
     return () => {
       original.remove()
       this.remove()
     }
+  })
+}
+Stream.prototype.reduce = function(reducer, initValue) {
+  const { subscribers, queue } = this
+  return Stream(function(next, error) {
+    next(queue.reduce(reducer, initValue))
+    subscribers.push(function(...args) {
+      next(queue.reduce(reducer, initValue))
+    })
   })
 }
 Stream.prototype.catch = function(catcher) {
@@ -37,6 +70,7 @@ Stream.prototype.catch = function(catcher) {
 Stream.prototype.remove = function(catcher) {
   if (this.remover && typeof(this.remover) === 'function')
   this.remover()
+  return this
 }
 Stream.all = function(arr) {
   return Stream((next, error) => {
@@ -56,6 +90,10 @@ Stream.from = function(value) {
   if (value instanceof Promise) {
     return Stream(function(next, error) {
       value.then(next)
+    })
+  } else if (Array.isArray(value)) {
+    return Stream(function(next, error) {
+      value.forEach(next)
     })
   } else if (typeof(value) === 'function') {
     const stream = Stream((next, error) => {
@@ -91,22 +129,30 @@ const eventStream2 = Stream((next, error) => {
   return () => document.removeEventListener('click', next)
 })
 
-eventStream.concat(eventStream2).map(val => console.log(val))
+// eventStream.filter(click => {
+
+// })
+eventStream
+  .concat(eventStream2)
+  .map(val => val.screenX)
+  .filter(val => val > 300)
+  .reduce((accu, val) => accu + parseInt(val), 0)
+  .map(val => console.log(val))
 // Stream.all([eventStream, eventStream2]).map(val => console.log(val))
-const promise = fetch('./index.html').then(res => res.text())
+// const promise = fetch('./index.html').then(res => res.text())
 // Stream.from(promise).map(val => console.log(val))
 
-// Event
-// value
-// Future
-// Generator
+// Event (push stream)
+// value (push/pull stream)
+// Future (push stream)
+// Generator (pull stream)
 
 // Stream method: from loadsh (streamify)
 
 // Stream.from(function* fibonacci () {
 //   var fn1 = 1;
 //   var fn2 = 1;
-//   while (1){
+//   while (1) {
 //     var current = fn2;
 //     fn2 = fn1;
 //     fn1 = fn1 + current;

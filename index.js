@@ -23,25 +23,35 @@ Stream.prototype._error = function(...args) {
 Stream.prototype.map = function(mapper) {
   const { subscribers, queue } = this
   return Stream(function(next, error) {
-    subscribers.push(function(...args) {
-      next(mapper(...args), queue.length - 1)
+    subscribers.push((...args) => {
+      next(
+        mapper.call(this, ...args),
+        queue.length - 1,
+        this
+      )
     })
-    queue.forEach((args, index) => next(mapper(...args), index))
+    queue.forEach((args, index) => (
+      next(
+        mapper.call(this, ...args),
+        index,
+        this
+      )
+    ))
   })
   return this
 }
 Stream.prototype.filter = function(predictor) {
   const { subscribers, queue } = this
   return Stream(function(next, error) {
-    subscribers.push(function(...args) {
-      if (predictor(...args)) {
-        next(...args, queue.length - 1)
+    subscribers.push((...args) => {
+      if (predictor.call(this, ...args)) {
+        next(...args, queue.length - 1, this)
       }
     })
     queue
       .forEach((args, index) => {
-        if (predictor(...args)) {
-          next(...args, index)
+        if (predictor.call(this, ...args)) {
+          next(...args, index, this)
         }
       })
   })
@@ -137,11 +147,11 @@ const eventStream2 = Stream((next, error) => {
 // })
 eventStream
   .concat(eventStream2)
-  .map((val, index) => val.screenX)
-  .filter((val, index) => index % 2)
-  .filter((val, index) => val > 300)
+  .map((val, index, stream) => val.screenX)
+  .map(function(val, index, stream) { console.log(this); return val })
+  .filter((val, index, stream) => index % 2)
+  .filter((val, index, stream) => val > 300)
   .reduce((accu, val) => accu + parseInt(val), 0)
-  .map(val => console.log(val))
 // Stream.all([eventStream, eventStream2]).map(val => console.log(val))
 // const promise = fetch('./index.html').then(res => res.text())
 // Stream.from(promise).map(val => console.log(val))

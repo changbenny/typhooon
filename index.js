@@ -24,9 +24,9 @@ Stream.prototype.map = function(mapper) {
   const { subscribers, queue } = this
   return Stream(function(next, error) {
     subscribers.push(function(...args) {
-      next(mapper(...args))
+      next(mapper(...args), queue.length - 1)
     })
-    queue.forEach(args => next(mapper(...args)))
+    queue.forEach((args, index) => next(mapper(...args), index))
   })
   return this
 }
@@ -35,12 +35,15 @@ Stream.prototype.filter = function(predictor) {
   return Stream(function(next, error) {
     subscribers.push(function(...args) {
       if (predictor(...args)) {
-        next(...args)
+        next(...args, queue.length - 1)
       }
     })
     queue
-      .filter(args => predictor(...args))
-      .forEach(args => next(...args))
+      .forEach((args, index) => {
+        if (predictor(...args)) {
+          next(...args, index)
+        }
+      })
   })
 }
 // TODO: align with Array concat
@@ -134,8 +137,9 @@ const eventStream2 = Stream((next, error) => {
 // })
 eventStream
   .concat(eventStream2)
-  .map(val => val.screenX)
-  .filter(val => val > 300)
+  .map((val, index) => val.screenX)
+  .filter((val, index) => index % 2)
+  .filter((val, index) => val > 300)
   .reduce((accu, val) => accu + parseInt(val), 0)
   .map(val => console.log(val))
 // Stream.all([eventStream, eventStream2]).map(val => console.log(val))
@@ -160,4 +164,4 @@ eventStream
 //   }
 // }).map(val => console.log(val))
 
-Stream.from([1,2,3]).map(value => console.log(value))
+// Stream.from([1,2,3]).map(value => console.log(value))

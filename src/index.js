@@ -6,20 +6,28 @@ const Stream = function(initialize) {
   this.catchers = []
   // For 'hot' observable
   this.queue = []
-  this.remover = initialize.call(
-    this,
-    this._next.bind(this),
-    this._error.bind(this)
-  )
+  if (initialize && typeof(initialize) === 'function') {
+    this.remover = initialize.call(
+      this,
+      this._next.bind(this),
+      this._error.bind(this)
+    )
+  }
 }
 
 Stream.prototype._next = function(...args) {
   this.queue.push(args)
   this.subscribers.forEach(sub => sub(...args))
 }
+
 Stream.prototype._error = function(...args) {
   this.catchers.push(catcher)
 }
+
+Stream.prototype.push = function(...args) {
+  this._next(...args)
+}
+
 Stream.prototype.map = function(mapper) {
   const { subscribers, queue } = this
   return Stream(function(next, error) {
@@ -146,51 +154,5 @@ Stream.from = function(value) {
     next(value)
   })
 }
-
-// const eventStream = Stream((next, error) => {
-//   document.addEventListener('click', next)
-//   return () => document.removeEventListener('click', next)
-// })
-// const eventStream2 = Stream((next, error) => {
-//   document.addEventListener('click', next)
-//   return () => document.removeEventListener('click', next)
-// })
-
-// eventStream.filter(click => {
-
-// })
-// eventStream
-//   .concat(eventStream2)
-//   .map((val, index, stream) => val.screenX)
-//   .map(function(val, index, stream) { console.log(this); return val })
-//   .filter((val, index, stream) => index % 2)
-//   .filter((val, index, stream) => val > 300)
-//   .reduce((accu, val) => accu + parseInt(val), 0)
-// Stream.all([eventStream, eventStream2]).map(val => console.log(val))
-// const promise = fetch('./index.html').then(res => res.text())
-// Stream.from(promise).map(val => console.log(val))
-
-// Event (push stream)
-// value (push/pull stream)
-// Future (push stream)
-// Generator (pull stream)
-// DOM (push stream)
-
-// Stream method: from loadsh (streamify)
-
-// Stream.from(function* fibonacci () {
-//   var fn1 = 1;
-//   var fn2 = 1;
-//   while (1) {
-//     var current = fn2;
-//     fn2 = fn1;
-//     fn1 = fn1 + current;
-//     yield current;
-//   }
-// }).map(val => console.log(val))
-
-// Stream.from([1,2,3]).map(value => console.log(value))
-// Stream.from(document.getElementById('div')).map(value => console.log(value))
-
 
 export default Stream

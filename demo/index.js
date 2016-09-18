@@ -10,7 +10,7 @@ const Counter = ({ increment, decrement, data }) => (
   </div>
 )
 
-const Wrapper = function(streams) {
+const connect = function(streams) {
 
   return function(Component) {
     const pushStreams = {}
@@ -37,18 +37,18 @@ const Wrapper = function(streams) {
   }
 }
 
-const increment = Typhooon((next, error) => {})
-const decrement = Typhooon((next, error) => {})
+const increment = Typhooon()
+const decrement = Typhooon()
 const data = increment.map(val => 1)
   .concat(decrement.map(val => -1))
   .reduce((accu, val) => accu + parseInt(val), 0)
 
-const WrappedCounter = Wrapper({
+const WrappedCounter = connect({
   increment(val) {
-    increment._next(val)
+    increment.push(val)
   },
   decrement(val) {
-    decrement._next(val)
+    decrement.push(val)
   },
   data,
 })(Counter)

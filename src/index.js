@@ -147,25 +147,25 @@ Stream.from = function(value) {
   })
 }
 
-const eventStream = Stream((next, error) => {
-  document.addEventListener('click', next)
-  return () => document.removeEventListener('click', next)
-})
-const eventStream2 = Stream((next, error) => {
-  document.addEventListener('click', next)
-  return () => document.removeEventListener('click', next)
-})
+// const eventStream = Stream((next, error) => {
+//   document.addEventListener('click', next)
+//   return () => document.removeEventListener('click', next)
+// })
+// const eventStream2 = Stream((next, error) => {
+//   document.addEventListener('click', next)
+//   return () => document.removeEventListener('click', next)
+// })
 
 // eventStream.filter(click => {
 
 // })
-eventStream
-  .concat(eventStream2)
-  .map((val, index, stream) => val.screenX)
-  .map(function(val, index, stream) { console.log(this); return val })
-  .filter((val, index, stream) => index % 2)
-  .filter((val, index, stream) => val > 300)
-  .reduce((accu, val) => accu + parseInt(val), 0)
+// eventStream
+//   .concat(eventStream2)
+//   .map((val, index, stream) => val.screenX)
+//   .map(function(val, index, stream) { console.log(this); return val })
+//   .filter((val, index, stream) => index % 2)
+//   .filter((val, index, stream) => val > 300)
+//   .reduce((accu, val) => accu + parseInt(val), 0)
 // Stream.all([eventStream, eventStream2]).map(val => console.log(val))
 // const promise = fetch('./index.html').then(res => res.text())
 // Stream.from(promise).map(val => console.log(val))
@@ -190,4 +190,7 @@ eventStream
 // }).map(val => console.log(val))
 
 // Stream.from([1,2,3]).map(value => console.log(value))
-Stream.from(document.getElementById('div')).map(value => console.log(value))
+// Stream.from(document.getElementById('div')).map(value => console.log(value))
+
+
+export default Stream

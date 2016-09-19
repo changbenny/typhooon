@@ -153,7 +153,7 @@ Stream.from = function(value) {
         next(value)
       }
     })
-    return stream;
+    return stream
   }
   return Stream(function(next, error) {
     next(value)

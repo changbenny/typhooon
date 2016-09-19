@@ -20,3 +20,9 @@ npm install --save typhooon
 ```
 
 ## Roadmap
+
+1. Array operators
+2. Promise operators
+3. Comments
+4. Performance
+5. Test

@@ -13,7 +13,9 @@ const Counter = ({ increment, decrement, data }) => (
 
 const increment = Typhooon()
 const decrement = Typhooon()
-const data = (increment.map(val => 1))
+const data = (increment.map((val, index, self) => {
+  return 1
+}))
   .concat(decrement.map(val => -1))
   .reduce((accu, val) => accu + parseInt(val), 0)
 
@@ -23,6 +25,11 @@ const WrappedCounter = connect({
   increment,
   decrement,
 })(Counter)
+
+const stream = Typhooon((next) => {
+  next(1)
+})
+stream.map(val => console.log(val))
 
 ReactDOM.render(
   <WrappedCounter />,

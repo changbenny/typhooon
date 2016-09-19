@@ -15,56 +15,43 @@ const Stream = function(initialize) {
   }
 }
 
-Stream.prototype._next = function(...args) {
-  this.queue.push(args)
-  this.subscribers.forEach(sub => sub(...args))
+Stream.prototype._next = function(val) {
+  this.queue.push(val)
+  this.subscribers.forEach(sub => sub(val))
 }
 
-Stream.prototype._error = function(...args) {
-  this.catchers.push(args)
+Stream.prototype._error = function(val) {
+  this.catchers.push(val)
 }
 
-Stream.prototype.push = function(...args) {
-  this._next(...args)
+Stream.prototype.push = function(val) {
+  this._next(val)
 }
 
 Stream.prototype.map = function(mapper) {
   const { subscribers, queue } = this
   return Stream(function(next, error) {
-    subscribers.push((...args) => {
-      next(
-        mapper.call(this, ...args),
-        queue.length - 1,
-        this
-      )
-    })
-    queue.forEach((args, index) => (
-      next(
-        mapper.call(this, ...args),
-        index,
-        this
-      )
-    ))
+    subscribers.push(val => next(mapper.call(this, val, queue.length - 1, this)))
+    queue.forEach((val, index) => next(mapper.call(this, val, index, this)))
   })
-  return this
 }
 
-Stream.prototype.then(thener => {
-  this.map(thener)
-})
+Stream.prototype.then = function(thener) {
+  return this.map(thener)
+}
 
 Stream.prototype.filter = function(predictor) {
   const { subscribers, queue } = this
   return Stream(function(next, error) {
-    subscribers.push((...args) => {
-      if (predictor.call(this, ...args)) {
-        next(...args, queue.length - 1, this)
+    subscribers.push((val) => {
+      if (predictor.call(this, val)) {
+        next(val)
       }
     })
     queue
       .forEach((args, index) => {
-        if (predictor.call(this, ...args)) {
-          next(...args, index, this)
+        if (predictor.call(this, val)) {
+          next(val)
         }
       })
   })
@@ -85,7 +72,7 @@ Stream.prototype.reduce = function(reducer, initValue) {
   const { subscribers, queue } = this
   return Stream(function(next, error) {
     next(queue.reduce(reducer, initValue))
-    subscribers.push(function(...args) {
+    subscribers.push(function(val) {
       next(queue.reduce(reducer, initValue))
     })
   })

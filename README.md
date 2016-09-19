@@ -2,7 +2,7 @@
 
 Functional reactive library for forgetful developers. Typhooon is a simple and elegant, shared the same API as JavaScript native Array and Promise.
 
-- Every operators are the same as native Array operator or Promise operators like `map`, `reduce`, `filter`.
+- No custom API. Every operators are the same as native Array + Promise operators like `map`, `reduce`, `filter`, `then`.
 - Can be created from simple value, Promise, Generator, DOM, and Events.
 
 
@@ -19,3 +19,4 @@ Github repository lists
 npm install --save typhooon
 ```
 
+## Roadmap

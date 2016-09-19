@@ -21,7 +21,7 @@ Stream.prototype._next = function(...args) {
 }
 
 Stream.prototype._error = function(...args) {
-  this.catchers.push(catcher)
+  this.catchers.push(args)
 }
 
 Stream.prototype.push = function(...args) {
@@ -48,6 +48,11 @@ Stream.prototype.map = function(mapper) {
   })
   return this
 }
+
+Stream.prototype.then(thener => {
+  this.map(thener)
+})
+
 Stream.prototype.filter = function(predictor) {
   const { subscribers, queue } = this
   return Stream(function(next, error) {
@@ -86,7 +91,7 @@ Stream.prototype.reduce = function(reducer, initValue) {
   })
 }
 Stream.prototype.catch = function(catcher) {
-  this.subscribers.push(subscriber)
+  this.subscribers.push(catcher)
 }
 Stream.prototype.remove = function(catcher) {
   if (this.remover && typeof(this.remover) === 'function')
@@ -108,7 +113,7 @@ Stream.race = function() {
 
 }
 Stream.from = function(value) {
-  if (value instanceof HTMLElement) {
+  if (typeof(HTMLElement) !== 'undefined' && value instanceof HTMLElement) {
     return Stream(function(next, error) {
       const observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {

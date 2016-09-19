@@ -1,8 +1,8 @@
 {
   "name": "typhooon",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "description": "Functional reactive library for forgetful developers.",
-  "main": "index.js",
+  "main": "dist/typhooon.js",
   "scripts": {
     "test": "ava"
   },

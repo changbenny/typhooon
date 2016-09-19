@@ -1,12 +1,6 @@
 function errorPropogation(sources, target, handler) {
   if (Array.isArray(sources)) {
-    sources.forEach(src => {
-      if (src.caughtError) {
-        target.caughtError = src.caughtError
-        src.caughtError = null
-        handler(target.caughtError)
-      }
-    })
+    sources.forEach(src => errorPropogation(src, target, handler))
   } else {
     if (sources.caughtError) {
       target.caughtError = sources.caughtError
@@ -53,7 +47,7 @@ Stream.prototype._next = function(val) {
 
 Stream.prototype._error = function(err) {
   if (this.status === 'error') {
-    console.log('n')
+    return
   }
   this.status = 'error'
   if (this.catchers.length > 0) {

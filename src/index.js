@@ -1,27 +1,72 @@
+function errorPropogation(sources, target, handler) {
+  if (Array.isArray(sources)) {
+    sources.forEach(src => {
+      if (src.caughtError) {
+        target.caughtError = src.caughtError
+        src.caughtError = null
+        handler(target.caughtError)
+      }
+    })
+  } else {
+    if (sources.caughtError) {
+      target.caughtError = sources.caughtError
+      sources.caughtError = null
+      handler(target.caughtError)
+    }
+  }
+}
+
 const Stream = function(initialize) {
   if (!(this instanceof Stream)) {
     return new Stream(initialize)
   }
+  this.status = 'live'
   this.subscribers = []
   this.catchers = []
   // For 'hot' observable
   this.queue = []
+  this.caughtError = null
+  this.remover = null
+
   if (initialize && typeof(initialize) === 'function') {
-    this.remover = initialize.call(
-      this,
-      this._next.bind(this),
-      this._error.bind(this)
-    )
+    try {
+      this.remover = initialize.call(
+        this,
+        this._next.bind(this),
+        this._error.bind(this)
+      )
+    } catch (err) {
+      this._error(err)
+    }
   }
 }
 
 Stream.prototype._next = function(val) {
-  this.queue.push(val)
-  this.subscribers.forEach(sub => sub(val))
+  if (this.status === 'error') return
+  try {
+    this.queue.push(val)
+    this.subscribers.forEach(sub => sub(val))
+  } catch (err) {
+    this._error(err)
+  }
 }
 
-Stream.prototype._error = function(val) {
-  this.catchers.push(val)
+Stream.prototype._error = function(err) {
+  if (this.status === 'error') {
+    console.log('n')
+  }
+  this.status = 'error'
+  if (this.catchers.length > 0) {
+    // only one catcher will catch the error
+    this.catchers[0](cat => cat(err))
+  } else {
+    setTimeout(() => {
+      if (this.caughtError) {
+        console.error('Unhandle Typhooon error:', err)
+      }
+    }, 0)
+    this.caughtError = err
+  }
 }
 
 Stream.prototype.push = function(val) {
@@ -29,10 +74,14 @@ Stream.prototype.push = function(val) {
 }
 
 Stream.prototype.map = function(mapper) {
-  const { subscribers, queue } = this
+  const { subscribers, queue, caughtError } = this
+  const _this = this
   return Stream(function(next, error) {
     subscribers.push(val => next(mapper.call(this, val, queue.length - 1, this)))
     queue.forEach((val, index) => next(mapper.call(this, val, index, this)))
+    // error propogation
+    this.caughtError = caughtError
+    errorPropogation(_this, this, error)
   })
 }
 
@@ -40,8 +89,16 @@ Stream.prototype.then = function(thener) {
   return this.map(thener)
 }
 
+Stream.prototype.catch = function(catcher) {
+  this.catchers.push(catcher)
+  catcher(this.caughtError)
+  this.caughtError = null
+  return this
+}
+
 Stream.prototype.filter = function(predictor) {
-  const { subscribers, queue } = this
+  const { subscribers, queue, caughtError } = this
+  const _this = this
   return Stream(function(next, error) {
     subscribers.push((val) => {
       if (predictor.call(this, val)) {
@@ -54,40 +111,50 @@ Stream.prototype.filter = function(predictor) {
           next(val)
         }
       })
+    errorPropogation(_this, this, error)
   })
 }
+
 // TODO: align with Array concat
 Stream.prototype.concat = function(stream) {
-  const original = this
+  const _this = this
   return Stream(function(next, error) {
-    original.subscribers.push(next)
+    _this.subscribers.push(next)
     stream.map(next)
+    errorPropogation([_this, stream], this, error)
     return () => {
-      original.remove()
+      _this.remove()
       this.remove()
     }
   })
 }
+
 Stream.prototype.reduce = function(reducer, initValue) {
   const { subscribers, queue } = this
+  const _this = this
   return Stream(function(next, error) {
     next(queue.reduce(reducer, initValue))
     subscribers.push(function(val) {
       next(queue.reduce(reducer, initValue))
     })
+    errorPropogation(_this, this, error)
   })
 }
-Stream.prototype.catch = function(catcher) {
-  this.subscribers.push(catcher)
-}
+
+// TODO: needed?
 Stream.prototype.remove = function(catcher) {
   if (this.remover && typeof(this.remover) === 'function')
   this.remover()
   return this
 }
+
 Stream.all = function(arr) {
   return Stream((next, error) => {
-    arr.forEach(stream => stream.map(next))
+    arr.forEach(stream => {
+      stream.map(next)
+      this.errorQueue = this.errorQueue.concat(stream.errorQueue)
+    })
+    
     return arr.reduce((accu, stream) => {
       return () => {
         accu()
@@ -96,9 +163,11 @@ Stream.all = function(arr) {
     }, function() {})
   })
 }
+
 Stream.race = function() {
 
 }
+
 Stream.from = function(value) {
   if (typeof(HTMLElement) !== 'undefined' && value instanceof HTMLElement) {
     return Stream(function(next, error) {

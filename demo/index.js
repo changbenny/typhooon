@@ -26,10 +26,15 @@ const WrappedCounter = connect({
   decrement,
 })(Counter)
 
-const stream = Typhooon((next) => {
+const stream = Typhooon((next, error) => {
+  // throw 'error'
   next(1)
+  error('ERR')
 })
-stream.map(val => console.log(val))
+stream
+  .map(val => console.log(val))
+  .catch(err => console.info(err))
+  .map(val => console.log(val))
 
 ReactDOM.render(
   <WrappedCounter />,

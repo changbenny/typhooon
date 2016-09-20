@@ -1,7 +1,7 @@
 const path = require('path');
 module.exports = {
   entry: {
-    'typhooon': path.resolve(__dirname, 'src/index.js'),
+    'typhooon': path.resolve(__dirname, 'demo/simple.js'),
   },
   output: {
     path: path.resolve(__dirname, 'dist/'),

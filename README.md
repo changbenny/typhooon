@@ -1,6 +1,6 @@
 # typhooon
 
-Minimal functional reactive library for forgetful developers. Zero-dependency, simple and elegant (~300 LOCs), shared the same API as JavaScript native Array and Promise.
+Minimal functional reactive library for forgetful developers. Zero-dependency, performant and elegant (~300 LOCs), shared the same API as JavaScript native Array and Promise.
 
 - No custom API. Every operators are the same as native Array + Promise operators like `map`, `reduce`, `filter`, `then`. But you can use them to easily combine to more powerful operators like `merge`,`fold`, `flatten`.
 - Can be created from simple value, Promise, Generator, DOM mutation observer, and Events. Or use stream constructor to build your custom stream.
@@ -56,6 +56,8 @@ stream
 3. Comments
 4. Performance optimisation
 5. Test
+6. Map, Set, iterator support
+7. scheduler
 
 
 

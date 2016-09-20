@@ -1,22 +1,12 @@
-function errorPropogation(sources, target, handler) {
-  if (Array.isArray(sources)) {
-    sources.forEach(src => errorPropogation(src, target, handler))
-  } else {
-    if (sources.caughtError) {
-      target.caughtError = sources.caughtError
-      sources.caughtError = null
-      handler(target.caughtError)
-    }
-  }
-}
 
 const Stream = function(initialize) {
   if (!(this instanceof Stream)) {
     return new Stream(initialize)
   }
-  this.status = 'live'
+  this.status = 'live' // 'live, error'
   this.subscribers = []
   this.catchers = []
+  
   // For 'hot' observable
   this.queue = []
   this.caughtError = null
@@ -26,26 +16,36 @@ const Stream = function(initialize) {
     try {
       this.remover = initialize.call(
         this,
-        this._next.bind(this),
-        this._error.bind(this)
+        _next.bind(this),
+        _error.bind(this)
       )
     } catch (err) {
-      this._error(err)
+      _error.call(this, err)
     }
   }
 }
 
-Stream.prototype._next = function(val) {
-  if (this.status === 'error') return
+/*
+ * Private method
+ * 
+ */
+
+function _next(val) {
+  if (this.status === 'error') {
+    return
+  }
+  this.queue[this.queue.length] = val // array.push
+  const { length } = this.subscribers
   try {
-    this.queue.push(val)
-    this.subscribers.forEach(sub => sub(val))
+    for (let i = 0; i < length; i ++) {
+      this.subscribers[i](val)
+    }
   } catch (err) {
-    this._error(err)
+    _error.call(this, err)
   }
 }
 
-Stream.prototype._error = function(err) {
+function _error(err) {
   if (this.status === 'error') {
     return
   }
@@ -63,8 +63,13 @@ Stream.prototype._error = function(err) {
   }
 }
 
+/*
+ * Instance method (Array, Promise)
+ * 
+ */
+
 Stream.prototype.push = function(val) {
-  this._next(val)
+  _next.call(this, val)
 }
 
 Stream.prototype.map = function(mapper) {
@@ -72,7 +77,10 @@ Stream.prototype.map = function(mapper) {
   const _this = this
   return Stream(function(next, error) {
     subscribers.push(val => next(mapper.call(this, val, queue.length - 1, this)))
-    queue.forEach((val, index) => next(mapper.call(this, val, index, this)))
+    const { length } = queue
+    for (let i = 0; i < length; i ++) {
+      next(mapper.call(this, queue[i], i, this))
+    }
     // error propogation
     this.caughtError = caughtError
     errorPropogation(_this, this, error)
@@ -94,17 +102,17 @@ Stream.prototype.filter = function(predictor) {
   const { subscribers, queue, caughtError } = this
   const _this = this
   return Stream(function(next, error) {
-    subscribers.push((val) => {
+    subscribers.push(function(val) {
       if (predictor.call(this, val)) {
         next(val)
       }
     })
-    queue
-      .forEach((args, index) => {
-        if (predictor.call(this, val)) {
-          next(val)
-        }
-      })
+    const { length } = queue
+    for (let i = 0; i < length; i ++) {
+      if (predictor.call(this, queue[i])) {
+        next(queue[i])
+      }
+    }
     errorPropogation(_this, this, error)
   })
 }
@@ -142,19 +150,24 @@ Stream.prototype.remove = function(catcher) {
   return this
 }
 
+/*
+ * Static method (Promise)
+ * 
+ */
+
 Stream.all = function(arr) {
   return Stream((next, error) => {
-    arr.forEach(stream => {
-      stream.map(next)
-      this.errorQueue = this.errorQueue.concat(stream.errorQueue)
-    })
-    
-    return arr.reduce((accu, stream) => {
-      return () => {
-        accu()
-        stream()
+    const { length } = arr
+    for (let i = 0; i < length; i ++) {
+      arr[i].map(next)
+    }
+    errorPropogation(arr.map(stream => stream.caughtError), this, error)
+
+    return function() {
+      for (let i = 0; i < length; i ++) {
+        arr[i]()
       }
-    }, function() {})
+    }
   })
 }
 
@@ -187,27 +200,26 @@ Stream.from = function(value) {
       value.forEach(next)
     })
   } else if (typeof(value) === 'function') {
-    const stream = Stream((next, error) => {
-      // generator
-      const val = value()
-      if (val.next) {
-        const generator = val
-        console.log(generator)
-        let cur = generator.next()
-        while(!cur.done) {
-          next(cur.value)
-          cur = generator.next()
-        }
-        next(cur.value)
-      } else {
-        next(value)
-      }
-    })
-    return stream
+    return Stream(value)
   }
   return Stream(function(next, error) {
     next(value)
   })
+}
+
+function errorPropogation(sources, target, handler) {
+  if (Array.isArray(sources)) {
+    const { length } = sources
+    for (let i = 0; i < length; i ++) {
+      errorPropogation(sources[i], target, handler)
+    }
+  } else {
+    if (sources.caughtError) {
+      target.caughtError = sources.caughtError
+      sources.caughtError = null
+      handler(target.caughtError)
+    }
+  }
 }
 
 export default Stream

@@ -13,11 +13,11 @@ Functional reactive library for forgetful developers. Typhooon is simple and ele
 
 **Work in Progress**
 
-Throttle input
+[Debounce input](demo/debounce.js)
 
 Github repository lists
 
-React-Typhoon
+[React-Typhoon](demo/react.js)
 
 
 

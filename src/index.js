@@ -99,7 +99,7 @@ Stream.prototype.catch = function(catcher) {
 }
 
 Stream.prototype.filter = function(predictor) {
-  const { subscribers, queue, caughtError } = this
+  const { subscribers, queue } = this
   const _this = this
   return Stream(function(next, error) {
     subscribers.push(function(val) {

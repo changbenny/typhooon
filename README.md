@@ -1,4 +1,4 @@
-# typhooon
+# Typhooon
 
 Minimal functional reactive library for forgetful developers. Zero-dependency, performant and elegant (~300 LOCs), shared the same API as JavaScript native Array and Promise.
 
@@ -7,17 +7,18 @@ Minimal functional reactive library for forgetful developers. Zero-dependency, p
 - No more custom terminology, only **streams**.
 - Support official Binding to React, like react-redux for redux. You can integrate typhooon with the react apps super easily.
 
+## Why
 
+We all know functional reactive programming is great for front-end web application with complicated interaction, and Rxjs are really powerful. But someone like me just cannot remember all the operators and terminology in Rxjs. For some use cases, why not just use a minimal abstrction for reactive programming? Here is Typhooon.
 
 ## Demo
 
 **Work in Progress**
 
-[Debounce input](demo/debounce.js)
+- [Debounce input](demo/debounce.js)
 
-Github repository lists
-
-[React-Typhoon](demo/react.js)
+- Github repository lists
+- [React-Typhoon](demo/react.js)
 
 
 
@@ -26,6 +27,8 @@ Github repository lists
 ```shell
 npm install --save typhooon
 ```
+
+
 
 ## API & Operators
 
@@ -54,10 +57,17 @@ stream
 1. Finish Array operators
 2. Finish Promise operators
 3. Comments
-4. Performance optimisation
-5. Test
-6. Map, Set, iterator support
-7. scheduler
+4. Test
+5. Map, Set, iterator support
+6. scheduler
+
+
+
+
+## Why Call It 'Typhooon'
+
+I made this library in a night with a strong typhoon incoming (I live in Taiwan). It's too destructive that double 'o' cannot describe its power.
+
 
 
 
